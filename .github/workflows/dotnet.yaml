@@ -1,0 +1,31 @@
+name: .NET Workflow
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "src/**"
+      - "External.sln"
+      - "tests/**"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: 6.x
+
+      - name: Install dependencies
+        run: dotnet restore External.sln
+      - name: Build
+        run: dotnet build --configuration Release --no-restore External.sln
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal External.sln
