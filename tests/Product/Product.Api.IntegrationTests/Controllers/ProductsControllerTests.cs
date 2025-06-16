@@ -1,0 +1,78 @@
+﻿using Alba;
+using External.Product.Api.Models.Product;
+using External.Product.Core.Models;
+using External.Product.Core.UseCases.Product.GetProducts;
+using FizzWare.NBuilder;
+using FluentAssertions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace External.Product.Api.IntegrationTests.Controllers
+{
+    [Collection("Integration")]
+    public class ProductsControllerTests
+    {
+        private readonly IAlbaHost host;
+
+        public ProductsControllerTests(AppFixture fixture)
+        {
+            host = fixture.Host;
+        }
+
+        public static IEnumerable<object[]> FilterProducts
+        {
+            get
+            {
+                yield return new object[] { new GetProductsRequest() { }, /*expectedCount*/ 10, /*verifyData*/ true };
+                yield return new object[] { new GetProductsRequest() { PageSize = 5 }, /*expectedCount*/ 5, /*verifyData*/ false };
+                yield return new object[] { new GetProductsRequest() { Name = "Google Pixel 6 Pro" }, /*expectedCount*/ 1, /*verifyData*/ false };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FilterProducts))]
+        public async Task GetProducts(GetProductsRequest request, int expectedCount, bool verifyData)
+        {
+            //Arrange
+            IEnumerable<GetProductsModel> products = new List<GetProductsModel>()
+            {
+                new() { Id = "1", Name = "Google Pixel 6 Pro", Data = new Data() { Color = "Cloudy White", Capacity = "128 GB" } },
+                new() { Id = "2", Name = "Apple iPhone 12 Mini, 256GB, Blue" },
+                new() { Id = "3", Name = "Apple iPhone 12 Pro Max", Data = new Data() { Color = "Cloudy White", CapacityGB = 512 } },
+                new() { Id = "4", Name = "Apple iPhone 11, 64GB", Data = new Data() { Color = "Purple", Price = 389.99 } },
+                new() { Id = "5", Name = "Samsung Galaxy Z Fold2", Data = new Data() { Color = "Brown", Price = 689.99 } },
+                new() { Id = "6", Name = "Apple AirPods", Data = new Data() { Generation = "3rd", Price = 120 } },
+                new() { Id = "7", Name = "Apple MacBook Pro 16", Data = new Data() { CPUModel = "Intel Core i9", HardDiskSize = "1 TB", Price = 1849.99, Year = 2019 } },
+                new() { Id = "8", Name = "Apple Watch Series 8", Data = new Data() { CaseSize = "41mm", StrapColour = "Elderberry" } },
+                new() { Id = "9", Name = "Beats Studio3 Wireless", Data = new Data() { Color = "Red", Description = "High-performance wireless noise cancelling headphones" } },
+                new() { Id = "10", Name = "Apple iPad Mini 5th Gen", Data = new Data() { Capacity = "64 GB", ScreenSize = 7.9 } }
+            };
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Get.Url($"/api/products?name={request.Name}&pageSize={request.PageSize}&page={request.Page}");
+                _.StatusCodeShouldBeOk();
+            });
+
+            //Assert
+            var result = response.ReadAsJson<PagedResult<GetProductsModel>>();
+            Assert.Equal(expectedCount, result.Result.Count());
+            if (verifyData)
+            {
+                var expectedList = products.Select(x => new GetProductsModel
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Data = x.Data
+                }).ToList();
+                result.Result.Should().BeEquivalentTo(expectedList);
+                result.Result.First().Equals(expectedList[0]);
+                result.Result.Last().Equals(expectedList[9]);
+            }
+        }
+    }
+}
