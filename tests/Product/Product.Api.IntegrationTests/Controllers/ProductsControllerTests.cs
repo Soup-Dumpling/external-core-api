@@ -144,7 +144,9 @@ namespace External.Product.Api.IntegrationTests.Controllers
 
             //Assert
             var result = response.ReadAsJson<GetProductsModel>();
-            Assert.NotEqual(inValidProduct, result);
+            Assert.Null(result.Id);
+            Assert.Null(result.Name);
+            Assert.Null(result.Data);
         }
     }
 }
