@@ -2,11 +2,11 @@
 using External.Product.Api.Models.Product;
 using External.Product.Core.Models;
 using External.Product.Core.UseCases.Product.GetProducts;
-using FizzWare.NBuilder;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -73,6 +73,78 @@ namespace External.Product.Api.IntegrationTests.Controllers
                 result.Result.First().Equals(expectedList[0]);
                 result.Result.Last().Equals(expectedList[9]);
             }
+        }
+
+        [Fact]
+        public async Task GetProductsByIds()
+        {
+            //Arrange
+            IEnumerable<GetProductsModel> expectedProducts = new List<GetProductsModel>()
+            {
+                new () { Id = "3", Name = "Apple iPhone 12 Pro Max", Data = new Data { CapacityGB = 512, Color = "Cloudy White" } },
+                new () { Id = "5", Name = "Samsung Galaxy Z Fold2", Data = new Data { Color = "Brown", Price = 689.99 } },
+                new () { Id = "10", Name = "Apple iPad Mini 5th Gen", Data = new Data { Capacity = "64 GB", ScreenSize = 7.9 } }
+            };
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Get.Url($"/api/products/objects?id=3&id=5&id=10");
+                _.StatusCodeShouldBeOk();
+            });
+
+            //Assert
+            var result = response.ReadAsJson<IEnumerable<GetProductsModel>>();
+            Assert.Equal(3, result.Count());
+            result.Should().BeEquivalentTo(expectedProducts);
+        }
+
+        [Fact]
+        public async Task GetProductById()
+        {
+            //Arrange
+            var expectedProduct = new GetProductsModel()
+            {
+                Id = "7",
+                Name = "Apple MacBook Pro 16",
+                Data = new Data { CPUModel = "Intel Core i9", HardDiskSize = "1 TB", Price = 1849.99, Year = 2019 }
+            };
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Get.Url($"/api/products/{expectedProduct.Id}");
+                _.StatusCodeShouldBeOk();
+            });
+
+            //Assert
+            var result = response.ReadAsJson<GetProductsModel>();
+            Assert.Equal(expectedProduct.Id, result.Id);
+            Assert.Equal(expectedProduct.Name, result.Name);
+            result.Data.Should().BeEquivalentTo(expectedProduct.Data);
+        }
+
+        [Fact]
+        public async Task InvalidGetProductById()
+        {
+            //Arrange
+            var inValidProduct = new GetProductsModel()
+            {
+                Id = "Invalid Key",
+                Name = "Product Name",
+                Data = new Data { Capacity = "256 GB", Color = "Coral Blue" }
+            };
+
+            //Act & Assert
+            var response = await host.Scenario(_ =>
+            {
+                _.Get.Url($"/api/products/{inValidProduct.Id}");
+                _.StatusCodeShouldBe(HttpStatusCode.NotFound);
+            });
+
+            //Assert
+            var result = response.ReadAsJson<GetProductsModel>();
+            Assert.NotEqual(inValidProduct, result);
         }
     }
 }
