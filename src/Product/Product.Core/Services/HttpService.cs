@@ -33,10 +33,6 @@ namespace External.Product.Core.Services
         public async Task<T> PostAsync<T>(string url, StringContent data)
         {
             var postUserRequest = await httpClient.PostAsync(url, data);
-            if (postUserRequest.StatusCode == HttpStatusCode.BadRequest)
-            {
-                throw new BadRequestException();
-            }
             postUserRequest.EnsureSuccessStatusCode();
             var responseString = await postUserRequest.Content.ReadAsStringAsync();
             var response = JsonConvert.DeserializeObject<T>(responseString);
@@ -49,10 +45,6 @@ namespace External.Product.Core.Services
             if (putUserRequest.StatusCode == HttpStatusCode.NotFound)
             {
                 throw new NotFoundException();
-            }
-            else if (putUserRequest.StatusCode == HttpStatusCode.BadRequest)
-            {
-                throw new BadRequestException();
             }
             putUserRequest.EnsureSuccessStatusCode();
             var responseString = await putUserRequest.Content.ReadAsStringAsync();
@@ -67,10 +59,6 @@ namespace External.Product.Core.Services
             {
                 throw new NotFoundException();
             }
-            else if (patchUserRequest.StatusCode == HttpStatusCode.BadRequest)
-            {
-                throw new BadRequestException();
-            }
             patchUserRequest.EnsureSuccessStatusCode();
             var responseString = await patchUserRequest.Content.ReadAsStringAsync();
             var response = JsonConvert.DeserializeObject<T>(responseString);
@@ -83,10 +71,6 @@ namespace External.Product.Core.Services
             if (deleteUserRequest.StatusCode == HttpStatusCode.NotFound)
             {
                 throw new NotFoundException();
-            }
-            else if (deleteUserRequest.StatusCode == HttpStatusCode.BadRequest)
-            {
-                throw new BadRequestException();
             }
             deleteUserRequest.EnsureSuccessStatusCode();
             var responseString = await deleteUserRequest.Content.ReadAsStringAsync();

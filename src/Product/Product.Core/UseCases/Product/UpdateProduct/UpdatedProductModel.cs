@@ -8,6 +8,6 @@ namespace External.Product.Core.UseCases.Product.UpdateProduct
         public string Id { get; set; }
         public string Name { get; set; }
         public Data Data { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }
