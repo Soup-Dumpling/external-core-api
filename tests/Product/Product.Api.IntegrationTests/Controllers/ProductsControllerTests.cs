@@ -230,6 +230,9 @@ namespace External.Product.Api.IntegrationTests.Controllers
             //Assert
             var result = response.ReadAsJson<UpdatedProductModel>();
             Assert.Equal(addedProductResult.Id, result.Id);
+            Assert.Equal(request.Name, result.Name);
+            var expectedProductData = new Data { Capacity = request.Data.Capacity, Color = request.Data.Color, Price = request.Data.Price, Year = request.Data.Year };
+            result.Data.Should().BeEquivalentTo(expectedProductData);
             var updatedProductGetResponse = await host.Scenario(_ =>
             {
                 _.Get.Url($"/api/products/{result.Id}");
@@ -243,7 +246,7 @@ namespace External.Product.Api.IntegrationTests.Controllers
                 Data = getUpdatedProduct.Data,
                 UpdatedAt = DateTime.Now,
             };
-            result.Should().BeEquivalentTo(getUpdatedProduct,
+            result.Should().BeEquivalentTo(expectedUpdatedProduct,
                 options =>
                 {
                     options.Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, TimeSpan.FromMinutes(1))).WhenTypeIs<DateTime>();
@@ -292,6 +295,221 @@ namespace External.Product.Api.IntegrationTests.Controllers
             var response = await host.Scenario(_ =>
             {
                 _.Put.Json<UpdateProductRequest>(request).ToUrl($"/api/products/3");
+                _.StatusCodeShouldBe(HttpStatusCode.InternalServerError);
+            });
+
+            //Assert
+            var result = response.ReadAsJson<UpdatedProductModel>();
+            Assert.Null(result.Id);
+            Assert.Null(result.Name);
+            Assert.Null(result.Data);
+            Assert.Null(result.UpdatedAt);
+        }
+
+        [Fact]
+        public async Task UpdateProductData()
+        {
+            //Arrange
+            var addProductRequest = Builder<AddProductRequest>.CreateNew()
+                .Do(x =>
+                {
+                    x.Name = "Galaxy S25 Ultra";
+                    x.Data = new Data { Capacity = "512 GB", Color = "Titanium Silverblue", Price = 1349, Year = 2025 };
+                }).Build();
+
+            var addedProductResponse = await host.Scenario(_ =>
+            {
+                _.Post.Json<AddProductRequest>(addProductRequest).ToUrl("/api/products");
+                _.StatusCodeShouldBeOk();
+            });
+
+            var addedProductResult = addedProductResponse.ReadAsJson<AddedProductModel>();
+
+            var request = Builder<UpdateProductDataRequest>.CreateNew()
+                .Do(x =>
+                {
+                    x.Data = new Data { Capacity = "1 TB", Color = "Titanium Silverblue", Price = 1649, Year = 2025 };
+                }).Build();
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Patch.Json<UpdateProductDataRequest>(request).ToUrl($"/api/products/data/{addedProductResult.Id}");
+                _.StatusCodeShouldBeOk();
+            });
+
+            //Assert
+            var result = response.ReadAsJson<UpdatedProductModel>();
+            Assert.Equal(addedProductResult.Id, result.Id);
+            var expectedProductData = new Data { Capacity = request.Data.Capacity, Color = request.Data.Color, Price = request.Data.Price, Year = request.Data.Year };
+            result.Data.Should().BeEquivalentTo(expectedProductData);
+            var updatedProductGetResponse = await host.Scenario(_ =>
+            {
+                _.Get.Url($"/api/products/{result.Id}");
+                _.StatusCodeShouldBeOk();
+            });
+            var getUpdatedProduct = updatedProductGetResponse.ReadAsJson<GetProductsModel>();
+            var expectedUpdatedProduct = new UpdatedProductModel
+            {
+                Id = getUpdatedProduct.Id,
+                Name = getUpdatedProduct.Name,
+                Data = getUpdatedProduct.Data,
+                UpdatedAt = DateTime.Now,
+            };
+            result.Should().BeEquivalentTo(expectedUpdatedProduct,
+                options =>
+                {
+                    options.Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, TimeSpan.FromMinutes(1))).WhenTypeIs<DateTime>();
+                    return options;
+                });
+        }
+
+        [Fact]
+        public async Task InvalidUpdateProductData()
+        {
+            //Arrange
+            var request = Builder<UpdateProductDataRequest>.CreateNew()
+                .Do(x =>
+                {
+                    x.Data = new Data { Capacity = "1 TB", Color = "Titanium Silverblue", Price = 1649, Year = 2025 };
+                }).Build();
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Patch.Json<UpdateProductDataRequest>(request).ToUrl($"/api/products/data/InvalidId");
+                _.StatusCodeShouldBe(HttpStatusCode.NotFound);
+            });
+
+            //Assert
+            var result = response.ReadAsJson<UpdatedProductModel>();
+            Assert.Null(result.Id);
+            Assert.Null(result.Name);
+            Assert.Null(result.Data);
+            Assert.Null(result.UpdatedAt);
+        }
+
+        [Fact]
+        public async Task BadRequestUpdateProductData()
+        {
+            //Arrange
+            var request = Builder<UpdateProductDataRequest>.CreateNew().
+                Do(x =>
+                {
+                    x.Data = new Data { CapacityGB = 512, Color = "Coral Blue", Year = 2022 };
+                }).Build();
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Patch.Json<UpdateProductDataRequest>(request).ToUrl($"/api/products/data/3");
+                _.StatusCodeShouldBe(HttpStatusCode.InternalServerError);
+            });
+
+            //Assert
+            var result = response.ReadAsJson<UpdatedProductModel>();
+            Assert.Null(result.Id);
+            Assert.Null(result.Name);
+            Assert.Null(result.Data);
+            Assert.Null(result.UpdatedAt);
+        }
+
+        [Fact]
+        public async Task UpdateProductName()
+        {
+            //Arrange
+            var addProductRequest = Builder<AddProductRequest>.CreateNew()
+                .Do(x =>
+                {
+                    x.Name = "Galaxy S25 Ultra";
+                    x.Data = new Data { Capacity = "512 GB", Color = "Titanium Silverblue", Price = 1349, Year = 2025 };
+                }).Build();
+
+            var addedProductResponse = await host.Scenario(_ =>
+            {
+                _.Post.Json<AddProductRequest>(addProductRequest).ToUrl("/api/products");
+                _.StatusCodeShouldBeOk();
+            });
+
+            var addedProductResult = addedProductResponse.ReadAsJson<AddedProductModel>();
+
+            var request = Builder<UpdateProductNameRequest>.CreateNew()
+                .Do(x =>
+                {
+                    x.Name = "Galaxy S25 Ultra Pro";
+                }).Build();
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Patch.Json<UpdateProductNameRequest>(request).ToUrl($"/api/products/name/{addedProductResult.Id}");
+                _.StatusCodeShouldBeOk();
+            });
+
+            //Assert
+            var result = response.ReadAsJson<UpdatedProductModel>();
+            Assert.Equal(addedProductResult.Id, result.Id);
+            Assert.Equal(request.Name, result.Name);
+            var updatedProductGetResponse = await host.Scenario(_ =>
+            {
+                _.Get.Url($"/api/products/{result.Id}");
+                _.StatusCodeShouldBeOk();
+            });
+            var getUpdatedProduct = updatedProductGetResponse.ReadAsJson<GetProductsModel>();
+            var expectedUpdatedProduct = new UpdatedProductModel
+            {
+                Id = getUpdatedProduct.Id,
+                Name = getUpdatedProduct.Name,
+                Data = getUpdatedProduct.Data,
+                UpdatedAt = DateTime.Now,
+            };
+            result.Should().BeEquivalentTo(expectedUpdatedProduct,
+                options =>
+                {
+                    options.Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, TimeSpan.FromMinutes(1))).WhenTypeIs<DateTime>();
+                    return options;
+                });
+        }
+
+        [Fact]
+        public async Task InvalidUpdateProductName()
+        {
+            //Arrange
+            var request = Builder<UpdateProductNameRequest>.CreateNew()
+                .Do(x =>
+                {
+                    x.Name = "Updated Product Name";
+                }).Build();
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Patch.Json<UpdateProductNameRequest>(request).ToUrl($"/api/products/name/InvalidId");
+                _.StatusCodeShouldBe(HttpStatusCode.NotFound);
+            });
+
+            //Assert
+            var result = response.ReadAsJson<UpdatedProductModel>();
+            Assert.Null(result.Id);
+            Assert.Null(result.Name);
+            Assert.Null(result.Data);
+            Assert.Null(result.UpdatedAt);
+        }
+
+        [Fact]
+        public async Task BadRequestUpdateProductName()
+        {
+            //Arrange
+            var request = Builder<UpdateProductNameRequest>.CreateNew().
+                Do(x =>
+                {
+                    x.Name = "Updated Product Name";
+                }).Build();
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Patch.Json<UpdateProductNameRequest>(request).ToUrl($"/api/products/name/3");
                 _.StatusCodeShouldBe(HttpStatusCode.InternalServerError);
             });
 
