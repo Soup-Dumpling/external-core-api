@@ -2,6 +2,7 @@
 using External.Product.Api.Models.Product;
 using External.Product.Core.Models;
 using External.Product.Core.UseCases.Product.AddProduct;
+using External.Product.Core.UseCases.Product.DeleteProduct;
 using External.Product.Core.UseCases.Product.GetProducts;
 using External.Product.Core.UseCases.Product.UpdateProduct;
 using FizzWare.NBuilder;
@@ -100,6 +101,25 @@ namespace External.Product.Api.IntegrationTests.Controllers
             var result = response.ReadAsJson<IEnumerable<GetProductsModel>>();
             Assert.Equal(3, result.Count());
             result.Should().BeEquivalentTo(expectedProducts);
+        }
+
+        [Fact]
+        public async Task InvalidGetProductsByIds()
+        {
+            //Arrange
+            var request = Builder<GetProductsByIdsRequest>.CreateNew()
+                .Do(x =>
+                {
+                    x.Ids = ["3", "", "10"];
+                }).Build();
+
+            //Act And Assert
+            await host.Scenario(_ =>
+            {
+                _.Get.Url($"/api/products/objects?id=3&id=&id=10");
+                _.StatusCodeShouldBe(HttpStatusCode.BadRequest);
+                _.ContentShouldContain("The request contains invalid parameters.");
+            });
         }
 
         [Fact]
@@ -519,6 +539,76 @@ namespace External.Product.Api.IntegrationTests.Controllers
             Assert.Null(result.Name);
             Assert.Null(result.Data);
             Assert.Null(result.UpdatedAt);
+        }
+
+        [Fact]
+        public async Task DeleteProduct()
+        {
+            //Arrange
+            var addProductRequest = Builder<AddProductRequest>.CreateNew()
+                .Do(x =>
+                {
+                    x.Name = "Galaxy S25 Ultra";
+                    x.Data = new Data { Capacity = "512 GB", Color = "Titanium Silverblue", Price = 1349, Year = 2025 };
+                }).Build();
+
+            var addedProductResponse = await host.Scenario(_ =>
+            {
+                _.Post.Json<AddProductRequest>(addProductRequest).ToUrl("/api/products");
+                _.StatusCodeShouldBeOk();
+            });
+
+            var addedProductResult = addedProductResponse.ReadAsJson<AddedProductModel>();
+
+            var expectedDeleteResponse = $"Object with id = {addedProductResult.Id} has been deleted.";
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Delete.Url($"/api/products/{addedProductResult.Id}");
+                _.StatusCodeShouldBeOk();
+            });
+
+            //Assert
+            var result = response.ReadAsJson<DeletedProductModel>();
+            Assert.NotEqual(string.Empty, result.Message);
+            Assert.Equal(expectedDeleteResponse, result.Message);
+        }
+
+        [Fact]
+        public async Task InvalidDeleteProduct()
+        {
+            //Arrange
+            var invalidProductId = "InvalidProductId";
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Delete.Url($"/api/products/{invalidProductId}");
+                _.StatusCodeShouldBe(HttpStatusCode.NotFound);
+            });
+
+            //Assert
+            var result = response.ReadAsJson<DeletedProductModel>();
+            Assert.Null(result.Message);
+        }
+
+        [Fact]
+        public async Task BadRequestDeleteProduct()
+        {
+            //Arrange
+            var productId = "3";
+
+            //Act
+            var response = await host.Scenario(_ =>
+            {
+                _.Delete.Url($"/api/products/{productId}");
+                _.StatusCodeShouldBe(HttpStatusCode.InternalServerError);
+            });
+
+            //Assert
+            var result = response.ReadAsJson<DeletedProductModel>();
+            Assert.Null(result.Message);
         }
     }
 }

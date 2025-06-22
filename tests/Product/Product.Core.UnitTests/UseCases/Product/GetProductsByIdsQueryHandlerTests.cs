@@ -1,4 +1,5 @@
-﻿using External.Product.Core.Services;
+﻿using External.Product.Core.Exceptions;
+using External.Product.Core.Services;
 using External.Product.Core.UseCases.Product.GetProducts;
 using External.Product.Core.UseCases.Product.GetProductsByIds;
 using NSubstitute;
@@ -47,6 +48,17 @@ namespace External.Product.Core.UnitTests.UseCases.Product
             Assert.Equal(expectedProducts.Last().Name, result.Last().Name);
             Assert.Equal(expectedProducts.Last().Data, result.Last().Data);
             Assert.Equivalent(expectedProducts, result);
+        }
+
+        [Fact]
+        public async Task EmptyStringInProductIdsList()
+        {
+            //Arrange
+            var getProductsByIdsQuery = new GetProductsByIdsQuery(["3", "", "10"]);
+
+            //Act And Assert
+            await Assert.ThrowsAsync<ValidationException>(async () => await getProductsByIdsQueryHandler.Handle(getProductsByIdsQuery, CancellationToken.None));
+            await httpServiceMock.DidNotReceive().GetAsync<IEnumerable<GetProductsModel>>(Arg.Any<string>());
         }
     }
 }
