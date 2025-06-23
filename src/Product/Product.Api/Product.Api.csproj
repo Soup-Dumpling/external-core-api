@@ -2,10 +2,11 @@
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
+		<RootNamespace>External.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
 		<UserSecretsId>89e98270-3c64-4435-887e-3cf0be8bfff2</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<DockerfileContext>..\..\..</DockerfileContext>
-		<RootNamespace>External.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+		<DockerComposeProjectPath>..\..\..\docker-compose.dcproj</DockerComposeProjectPath>
 	</PropertyGroup>
 
 	<ItemGroup>
