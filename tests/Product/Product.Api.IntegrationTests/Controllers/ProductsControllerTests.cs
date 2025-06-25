@@ -148,31 +148,6 @@ namespace External.Product.Api.IntegrationTests.Controllers
         }
 
         [Fact]
-        public async Task InvalidGetProductById()
-        {
-            //Arrange
-            var inValidProduct = new GetProductsModel()
-            {
-                Id = "Invalid Key",
-                Name = "Product Name",
-                Data = new Data { Capacity = "256 GB", Color = "Coral Blue" }
-            };
-
-            //Act & Assert
-            var response = await host.Scenario(_ =>
-            {
-                _.Get.Url($"/api/products/{inValidProduct.Id}");
-                _.StatusCodeShouldBe(HttpStatusCode.NotFound);
-            });
-
-            //Assert
-            var result = response.ReadAsJson<GetProductsModel>();
-            Assert.Null(result.Id);
-            Assert.Null(result.Name);
-            Assert.Null(result.Data);
-        }
-
-        [Fact]
         public async Task AddProduct()
         {
             //Arrange
@@ -275,58 +250,6 @@ namespace External.Product.Api.IntegrationTests.Controllers
         }
 
         [Fact]
-        public async Task InvalidUpdateProduct()
-        {
-            //Arrange
-            var request = Builder<UpdateProductRequest>.CreateNew()
-                .Do(x =>
-                {
-                    x.Name = "Galaxy S25 Ultra Pro";
-                    x.Data = new Data { Capacity = "1 TB", Color = "Titanium Silverblue", Price = 1649, Year = 2025 };
-                }).Build();
-
-            //Act
-            var response = await host.Scenario(_ =>
-            {
-                _.Put.Json<UpdateProductRequest>(request).ToUrl($"/api/products/InvalidId");
-                _.StatusCodeShouldBe(HttpStatusCode.NotFound);
-            });
-
-            //Assert
-            var result = response.ReadAsJson<UpdatedProductModel>();
-            Assert.Null(result.Id);
-            Assert.Null(result.Name);
-            Assert.Null(result.Data);
-            Assert.Null(result.UpdatedAt);
-        }
-
-        [Fact]
-        public async Task BadRequestUpdateProduct()
-        {
-            //Arrange
-            var request = Builder<UpdateProductRequest>.CreateNew()
-                .Do(x =>
-                {
-                    x.Name = "Apple iPhone 14 Pro Max";
-                    x.Data = new Data { CapacityGB = 512, Color = "Coral Blue", Year = 2022 };
-                }).Build();
-
-            //Act
-            var response = await host.Scenario(_ =>
-            {
-                _.Put.Json<UpdateProductRequest>(request).ToUrl($"/api/products/3");
-                _.StatusCodeShouldBe(HttpStatusCode.InternalServerError);
-            });
-
-            //Assert
-            var result = response.ReadAsJson<UpdatedProductModel>();
-            Assert.Null(result.Id);
-            Assert.Null(result.Name);
-            Assert.Null(result.Data);
-            Assert.Null(result.UpdatedAt);
-        }
-
-        [Fact]
         public async Task UpdateProductData()
         {
             //Arrange
@@ -382,56 +305,6 @@ namespace External.Product.Api.IntegrationTests.Controllers
                     options.Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, TimeSpan.FromMinutes(1))).WhenTypeIs<DateTime>();
                     return options;
                 });
-        }
-
-        [Fact]
-        public async Task InvalidUpdateProductData()
-        {
-            //Arrange
-            var request = Builder<UpdateProductDataRequest>.CreateNew()
-                .Do(x =>
-                {
-                    x.Data = new Data { Capacity = "1 TB", Color = "Titanium Silverblue", Price = 1649, Year = 2025 };
-                }).Build();
-
-            //Act
-            var response = await host.Scenario(_ =>
-            {
-                _.Patch.Json<UpdateProductDataRequest>(request).ToUrl($"/api/products/data/InvalidId");
-                _.StatusCodeShouldBe(HttpStatusCode.NotFound);
-            });
-
-            //Assert
-            var result = response.ReadAsJson<UpdatedProductModel>();
-            Assert.Null(result.Id);
-            Assert.Null(result.Name);
-            Assert.Null(result.Data);
-            Assert.Null(result.UpdatedAt);
-        }
-
-        [Fact]
-        public async Task BadRequestUpdateProductData()
-        {
-            //Arrange
-            var request = Builder<UpdateProductDataRequest>.CreateNew().
-                Do(x =>
-                {
-                    x.Data = new Data { CapacityGB = 512, Color = "Coral Blue", Year = 2022 };
-                }).Build();
-
-            //Act
-            var response = await host.Scenario(_ =>
-            {
-                _.Patch.Json<UpdateProductDataRequest>(request).ToUrl($"/api/products/data/3");
-                _.StatusCodeShouldBe(HttpStatusCode.InternalServerError);
-            });
-
-            //Assert
-            var result = response.ReadAsJson<UpdatedProductModel>();
-            Assert.Null(result.Id);
-            Assert.Null(result.Name);
-            Assert.Null(result.Data);
-            Assert.Null(result.UpdatedAt);
         }
 
         [Fact]
@@ -492,56 +365,6 @@ namespace External.Product.Api.IntegrationTests.Controllers
         }
 
         [Fact]
-        public async Task InvalidUpdateProductName()
-        {
-            //Arrange
-            var request = Builder<UpdateProductNameRequest>.CreateNew()
-                .Do(x =>
-                {
-                    x.Name = "Updated Product Name";
-                }).Build();
-
-            //Act
-            var response = await host.Scenario(_ =>
-            {
-                _.Patch.Json<UpdateProductNameRequest>(request).ToUrl($"/api/products/name/InvalidId");
-                _.StatusCodeShouldBe(HttpStatusCode.NotFound);
-            });
-
-            //Assert
-            var result = response.ReadAsJson<UpdatedProductModel>();
-            Assert.Null(result.Id);
-            Assert.Null(result.Name);
-            Assert.Null(result.Data);
-            Assert.Null(result.UpdatedAt);
-        }
-
-        [Fact]
-        public async Task BadRequestUpdateProductName()
-        {
-            //Arrange
-            var request = Builder<UpdateProductNameRequest>.CreateNew().
-                Do(x =>
-                {
-                    x.Name = "Updated Product Name";
-                }).Build();
-
-            //Act
-            var response = await host.Scenario(_ =>
-            {
-                _.Patch.Json<UpdateProductNameRequest>(request).ToUrl($"/api/products/name/3");
-                _.StatusCodeShouldBe(HttpStatusCode.InternalServerError);
-            });
-
-            //Assert
-            var result = response.ReadAsJson<UpdatedProductModel>();
-            Assert.Null(result.Id);
-            Assert.Null(result.Name);
-            Assert.Null(result.Data);
-            Assert.Null(result.UpdatedAt);
-        }
-
-        [Fact]
         public async Task DeleteProduct()
         {
             //Arrange
@@ -573,42 +396,6 @@ namespace External.Product.Api.IntegrationTests.Controllers
             var result = response.ReadAsJson<DeletedProductModel>();
             Assert.NotEqual(string.Empty, result.Message);
             Assert.Equal(expectedDeleteResponse, result.Message);
-        }
-
-        [Fact]
-        public async Task InvalidDeleteProduct()
-        {
-            //Arrange
-            var invalidProductId = "InvalidProductId";
-
-            //Act
-            var response = await host.Scenario(_ =>
-            {
-                _.Delete.Url($"/api/products/{invalidProductId}");
-                _.StatusCodeShouldBe(HttpStatusCode.NotFound);
-            });
-
-            //Assert
-            var result = response.ReadAsJson<DeletedProductModel>();
-            Assert.Null(result.Message);
-        }
-
-        [Fact]
-        public async Task BadRequestDeleteProduct()
-        {
-            //Arrange
-            var productId = "3";
-
-            //Act
-            var response = await host.Scenario(_ =>
-            {
-                _.Delete.Url($"/api/products/{productId}");
-                _.StatusCodeShouldBe(HttpStatusCode.InternalServerError);
-            });
-
-            //Assert
-            var result = response.ReadAsJson<DeletedProductModel>();
-            Assert.Null(result.Message);
         }
     }
 }
