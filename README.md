@@ -79,3 +79,13 @@ Then, you can access test the project endpoints using the Swagger UI via https:/
 | ------------ | --------------------------------------------------------------------- |
 | Product.Api  | Create your endpoints related to product service here                 |
 | Product.Core | Core of the product service - including use cases, domain and context |
+
+## Running the test cases
+
+In order to run the test cases in the tests directory, click on **View -> Test Explorer** as shown below:
+
+![View options](docs/media/vs-view-options.png)
+
+Once the Test Explorer panel opens, click the first green play button that runs _All Tests In View_
+
+![Test explorer](docs/media/test-explorer.png)
